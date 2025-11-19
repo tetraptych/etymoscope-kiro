@@ -31,6 +31,7 @@ export default function HomePage() {
     return depthParam ? parseInt(depthParam, 10) : 2;
   });
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [userClosedPanel, setUserClosedPanel] = useState(false);
   const [selectedNodeWord, setSelectedNodeWord] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('selected');
@@ -98,7 +99,7 @@ export default function HomePage() {
 
   // Auto-select node from URL after data loads, or select root node
   useEffect(() => {
-    if (data && !selectedNode) {
+    if (data && !selectedNode && !userClosedPanel) {
       if (selectedNodeWord) {
         // If there's a selected node from URL, use that
         const node = data.nodes.find(n => n.word === selectedNodeWord);
@@ -114,13 +115,14 @@ export default function HomePage() {
         }
       }
     }
-  }, [selectedNodeWord, data, selectedNode]);
+  }, [selectedNodeWord, data, selectedNode, userClosedPanel]);
 
   const handleSearch = () => {
     if (searchValue.trim()) {
       const word = searchValue.trim().toLowerCase();
       setCurrentWord(word);
       setSelectedNode(null);
+      setUserClosedPanel(false); // Reset when searching for a new word
 
       // Add to recent searches if not already present
       if (!recentSearches.includes(word)) {
@@ -135,6 +137,7 @@ export default function HomePage() {
 
   const handleNodeClick = (node: GraphNode) => {
     setSelectedNode(node);
+    setUserClosedPanel(false); // Reset when user clicks a node
   };
 
   const handleShare = () => {
@@ -145,6 +148,7 @@ export default function HomePage() {
     setSearchValue(word);
     setCurrentWord(word);
     setSelectedNode(null);
+    setUserClosedPanel(false); // Reset when exploring a new word
 
     if (!recentSearches.includes(word)) {
       setRecentSearches([word, ...recentSearches.slice(0, 4)]);
@@ -155,6 +159,7 @@ export default function HomePage() {
     setSearchValue(word);
     setCurrentWord(word);
     setSelectedNode(null);
+    setUserClosedPanel(false); // Reset when selecting a recent word
   };
 
   const handleRemoveRecent = (word: string) => {
@@ -197,6 +202,7 @@ export default function HomePage() {
           setSearchValue(word);
           setCurrentWord(word);
           setSelectedNode(null);
+          setUserClosedPanel(false); // Reset when getting a random word
           
           if (!recentSearches.includes(word)) {
             setRecentSearches([word, ...recentSearches.slice(0, 4)]);
@@ -301,7 +307,10 @@ export default function HomePage() {
                 definition={selectedNode.definition}
                 relatedWords={selectedNode.relatedWords || []}
                 onExploreWord={handleExploreWord}
-                onClose={() => setSelectedNode(null)}
+                onClose={() => {
+                  setSelectedNode(null);
+                  setUserClosedPanel(true); // Mark that user explicitly closed the panel
+                }}
               />
             )}
             <Legend 

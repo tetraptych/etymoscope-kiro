@@ -65,7 +65,7 @@ export default function AboutDialog({ isOpen, onClose }: AboutDialogProps) {
             </div>
             <div>
               <p className="text-muted-foreground">
-                The project's source code can be found on <a href="https://github.com/tetraptych/etymoscope"><u>GitHub</u></a>.
+                The project's source code can be found on <a href="https://github.com/tetraptych/etymoscope-kiro"><u>GitHub</u></a>.
               </p>
             </div>
           </div>

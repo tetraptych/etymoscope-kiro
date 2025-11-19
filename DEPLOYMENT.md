@@ -97,15 +97,6 @@ Build the frontend:
 npm run build
 ```
 
-(Optional) Backup the old site first:
-```bash
-aws s3 sync s3://etymoscope.com/ s3://etymoscope.com/backup/ \
-  --profile personal \
-  --region us-west-2 \
-  --exclude "data/*" \
-  --exclude "backup/*"
-```
-
 Deploy to S3 (this will replace the old site):
 ```bash
 aws s3 sync dist/client/ s3://etymoscope.com/ \

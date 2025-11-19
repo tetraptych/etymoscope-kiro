@@ -47,49 +47,63 @@ export class MemStorage implements IStorage {
       return undefined;
     }
 
-    // Step 1: Pick a random word X with related words
-    let wordX: string | undefined;
-    let entryX: WordEntry | undefined;
-    let attempts = 0;
-    const maxAttempts = 100; // Prevent infinite loop
-
-    while (attempts < maxAttempts) {
-      const randomIndex = Math.floor(Math.random() * words.length);
-      const candidate = words[randomIndex];
-      const entry = this.etymologyData[candidate];
-
+    // Build list of all connections (edges)
+    const connections: Array<[string, string]> = [];
+    for (const word of words) {
+      const entry = this.etymologyData[word];
       if (entry && entry.relatedWords.length > 0) {
-        wordX = candidate;
-        entryX = entry;
-        break;
+        for (const relatedWord of entry.relatedWords) {
+          const normalized = relatedWord.toLowerCase().trim();
+          if (this.etymologyData[normalized]) {
+            connections.push([word, normalized]);
+          }
+        }
       }
-      attempts++;
     }
 
-    // If we couldn't find a word with related words, return undefined
-    if (!wordX || !entryX) {
+    if (connections.length === 0) {
       return undefined;
     }
 
-    // Step 2: Pick a random related word Y from X's related words
-    let wordY: string | undefined;
-    attempts = 0;
+    // Constants for filtering
+    const MIN_CONNECTIONS = 1;
+    const MAX_NODES = 850; // Same threshold as frontend
+    const MAX_ATTEMPTS = 100;
 
-    while (attempts < maxAttempts) {
-      const randomRelatedIndex = Math.floor(Math.random() * entryX.relatedWords.length);
-      const candidateY = entryX.relatedWords[randomRelatedIndex].toLowerCase().trim();
-      const entryY = this.etymologyData[candidateY];
-
-      // Step 3: Check that Y has non-empty related words
-      if (entryY && entryY.relatedWords.length > 0) {
-        wordY = candidateY;
-        break;
+    // Try to find a good word by picking random connections
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const randomIndex = Math.floor(Math.random() * connections.length);
+      const [word1, word2] = connections[randomIndex];
+      
+      const entry1 = this.etymologyData[word1];
+      const entry2 = this.etymologyData[word2];
+      
+      // Check word1: has connections and creates manageable graph
+      if (entry1 && entry1.relatedWords.length >= MIN_CONNECTIONS) {
+        const graph1 = await this.getWordGraph(word1, 3);
+        if (graph1.nodes.length <= MAX_NODES) {
+          return word1;
+        }
       }
-      attempts++;
+      
+      // Check word2: has connections and creates manageable graph
+      if (entry2 && entry2.relatedWords.length >= MIN_CONNECTIONS) {
+        const graph2 = await this.getWordGraph(word2, 3);
+        if (graph2.nodes.length <= MAX_NODES) {
+          return word2;
+        }
+      }
     }
 
-    // If we couldn't find a suitable Y, fall back to X
-    return wordY || wordX;
+    // Fallback: return any word with at least one connection
+    for (const word of words) {
+      const entry = this.etymologyData[word];
+      if (entry && entry.relatedWords.length > 0) {
+        return word;
+      }
+    }
+
+    return undefined;
   }
 
   async getWordGraph(

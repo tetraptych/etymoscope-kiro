@@ -176,7 +176,14 @@ export class MemStorage implements IStorage {
     }
 
     // Hub node pruning: remove children of nodes with >= 80 children at depth >= 1
+    // Feature flag: set to false to disable hub pruning
+    const ENABLE_HUB_PRUNING = true;
     const HUB_THRESHOLD = 80;
+    
+    if (!ENABLE_HUB_PRUNING) {
+      return { nodes, edges };
+    }
+    
     const childrenByParent = new Map<string, Set<string>>();
 
     // Build parent -> children map (considering both directions of edges)

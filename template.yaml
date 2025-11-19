@@ -15,7 +15,7 @@ Parameters:
 Globals:
   Function:
     Timeout: 30
-    MemorySize: 1024
+    MemorySize: 1536
     Runtime: nodejs20.x
     Environment:
       Variables:
@@ -24,8 +24,9 @@ Globals:
   Api:
     Cors:
       AllowMethods: "'GET,OPTIONS'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Accept-Encoding'"
       AllowOrigin: "'*'"
+    MinimumCompressionSize: 1024
 
 Resources:
   # Lambda function for getting word etymology

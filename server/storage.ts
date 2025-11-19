@@ -41,61 +41,51 @@ export class MemStorage implements IStorage {
     return this.etymologyData[normalizedWord];
   }
 
-  async getRandomWord(): Promise<string | undefined> {
-    const words = Object.keys(this.etymologyData);
-    if (words.length === 0) {
-      return undefined;
-    }
+  private wordStats: { totalWeight: number; words: Array<{ word: string; numConnections: number; graphSize: number; cumulativeWeight: number }> } | null = null;
 
-    // Build list of all connections (edges)
-    const connections: Array<[string, string]> = [];
-    for (const word of words) {
-      const entry = this.etymologyData[word];
-      if (entry && entry.relatedWords.length > 0) {
-        for (const relatedWord of entry.relatedWords) {
-          const normalized = relatedWord.toLowerCase().trim();
-          if (this.etymologyData[normalized]) {
-            connections.push([word, normalized]);
+  private loadWordStats(): void {
+    if (this.wordStats) return;
+    
+    try {
+      const statsPath = resolve('./data/word-stats.json');
+      const statsContent = readFileSync(statsPath, 'utf-8');
+      this.wordStats = JSON.parse(statsContent);
+      console.log(`[storage] Loaded stats for ${this.wordStats!.words.length} words (total weight: ${this.wordStats!.totalWeight})`);
+    } catch (error) {
+      console.warn('[storage] Could not load word-stats.json');
+      this.wordStats = null;
+    }
+  }
+
+  async getRandomWord(): Promise<string | undefined> {
+    this.loadWordStats();
+    
+    // Fast path: use precomputed cumulative weights with binary search
+    if (this.wordStats) {
+      const { totalWeight, words } = this.wordStats;
+      
+      if (words.length > 0) {
+        const random = Math.random() * totalWeight;
+        
+        // Binary search for the word
+        let left = 0;
+        let right = words.length - 1;
+        
+        while (left < right) {
+          const mid = Math.floor((left + right) / 2);
+          if (words[mid].cumulativeWeight < random) {
+            left = mid + 1;
+          } else {
+            right = mid;
           }
         }
+        
+        return words[left].word;
       }
     }
-
-    if (connections.length === 0) {
-      return undefined;
-    }
-
-    // Constants for filtering
-    const MIN_CONNECTIONS = 1;
-    const MAX_NODES = 850; // Same threshold as frontend
-    const MAX_ATTEMPTS = 100;
-
-    // Try to find a good word by picking random connections
-    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const randomIndex = Math.floor(Math.random() * connections.length);
-      const [word1, word2] = connections[randomIndex];
-      
-      const entry1 = this.etymologyData[word1];
-      const entry2 = this.etymologyData[word2];
-      
-      // Check word1: has connections and creates manageable graph
-      if (entry1 && entry1.relatedWords.length >= MIN_CONNECTIONS) {
-        const graph1 = await this.getWordGraph(word1, 3);
-        if (graph1.nodes.length <= MAX_NODES) {
-          return word1;
-        }
-      }
-      
-      // Check word2: has connections and creates manageable graph
-      if (entry2 && entry2.relatedWords.length >= MIN_CONNECTIONS) {
-        const graph2 = await this.getWordGraph(word2, 3);
-        if (graph2.nodes.length <= MAX_NODES) {
-          return word2;
-        }
-      }
-    }
-
-    // Fallback: return any word with at least one connection
+    
+    // Fallback: return any word with connections
+    const words = Object.keys(this.etymologyData);
     for (const word of words) {
       const entry = this.etymologyData[word];
       if (entry && entry.relatedWords.length > 0) {

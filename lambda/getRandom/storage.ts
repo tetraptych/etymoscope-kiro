@@ -10,6 +10,7 @@ interface EtymologyData {
 }
 
 let cachedData: EtymologyData | null = null;
+let cachedStats: { totalWeight: number; words: Array<{ word: string; numConnections: number; graphSize: number; cumulativeWeight: number }> } | null = null;
 
 export async function loadData(): Promise<EtymologyData> {
   if (cachedData) {
@@ -30,6 +31,46 @@ export async function loadData(): Promise<EtymologyData> {
   console.log(`Loaded ${Object.keys(cachedData).length} words`);
   
   return cachedData;
+}
+
+async function loadWordStats(): Promise<{ totalWeight: number; words: Array<{ word: string; numConnections: number; graphSize: number }> } | null> {
+  if (cachedStats) {
+    // Validate cached stats has correct format
+    if (cachedStats.words && cachedStats.totalWeight) {
+      console.log('Using cached stats');
+      return cachedStats;
+    }
+    // Invalid format, clear cache and reload
+    console.log('Cached stats in wrong format, reloading...');
+    cachedStats = null;
+  }
+
+  try {
+    console.log('Loading word stats from S3...');
+    const s3 = new S3Client({ region: 'us-west-2' });
+    
+    const response = await s3.send(new GetObjectCommand({
+      Bucket: process.env.DATA_BUCKET!,
+      Key: 'data/word-stats.json'
+    }));
+
+    const body = await response.Body!.transformToString();
+    const parsed = JSON.parse(body);
+    
+    // Validate format
+    if (!parsed.words || !parsed.totalWeight) {
+      console.error('Invalid word-stats.json format');
+      return null;
+    }
+    
+    cachedStats = parsed;
+    console.log(`Loaded stats for ${cachedStats!.words.length} words (total weight: ${cachedStats!.totalWeight})`);
+    
+    return cachedStats;
+  } catch (error) {
+    console.warn('Could not load word-stats.json, falling back to slower method');
+    return null;
+  }
 }
 
 // Helper function to compute graph size (simplified version without full node data)
@@ -68,63 +109,32 @@ async function getGraphSize(word: string, depth: number, data: EtymologyData): P
 }
 
 export async function getRandomWord(): Promise<string> {
+  // Fast path: use precomputed cumulative weights with binary search
+  const stats = await loadWordStats();
+  if (stats && stats.words.length > 0) {
+    const { totalWeight, words } = stats;
+    const random = Math.random() * totalWeight;
+    
+    // Binary search for the word
+    let left = 0;
+    let right = words.length - 1;
+    
+    while (left < right) {
+      const mid = Math.floor((left + right) / 2);
+      if (words[mid].cumulativeWeight < random) {
+        left = mid + 1;
+      } else {
+        right = mid;
+      }
+    }
+    
+    return words[left].word;
+  }
+  
+  // Fallback: return any word with connections
   const data = await loadData();
   const words = Object.keys(data);
   
-  if (words.length === 0) {
-    throw new Error('No words in database');
-  }
-
-  // Build list of all connections (edges)
-  const connections: Array<[string, string]> = [];
-  for (const word of words) {
-    const entry = data[word];
-    if (entry && entry.relatedWords.length > 0) {
-      for (const relatedWord of entry.relatedWords) {
-        const normalized = relatedWord.toLowerCase().trim();
-        if (data[normalized]) {
-          connections.push([word, normalized]);
-        }
-      }
-    }
-  }
-
-  if (connections.length === 0) {
-    // Fallback: return any word
-    return words[Math.floor(Math.random() * words.length)];
-  }
-
-  // Constants for filtering
-  const MIN_CONNECTIONS = 1;
-  const MAX_NODES = 850; // Same threshold as frontend
-  const MAX_ATTEMPTS = 100;
-
-  // Try to find a good word by picking random connections
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const randomIndex = Math.floor(Math.random() * connections.length);
-    const [word1, word2] = connections[randomIndex];
-    
-    const entry1 = data[word1];
-    const entry2 = data[word2];
-    
-    // Check word1: has connections and creates manageable graph
-    if (entry1 && entry1.relatedWords.length >= MIN_CONNECTIONS) {
-      const size1 = await getGraphSize(word1, 3, data);
-      if (size1 <= MAX_NODES) {
-        return word1;
-      }
-    }
-    
-    // Check word2: has connections and creates manageable graph
-    if (entry2 && entry2.relatedWords.length >= MIN_CONNECTIONS) {
-      const size2 = await getGraphSize(word2, 3, data);
-      if (size2 <= MAX_NODES) {
-        return word2;
-      }
-    }
-  }
-
-  // Fallback: return any word with at least one connection
   for (const word of words) {
     const entry = data[word];
     if (entry && entry.relatedWords.length > 0) {
@@ -133,5 +143,9 @@ export async function getRandomWord(): Promise<string> {
   }
 
   // Last resort: return any word
-  return words[Math.floor(Math.random() * words.length)];
+  if (words.length > 0) {
+    return words[Math.floor(Math.random() * words.length)];
+  }
+  
+  throw new Error('No words in database');
 }

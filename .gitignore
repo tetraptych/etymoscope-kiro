@@ -35,4 +35,5 @@ legacy/
 
 # Large data files (available on S3)
 data/full-data.json
+data/word-stats.json
 etymoscope-mongodump.json

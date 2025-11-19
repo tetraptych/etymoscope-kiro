@@ -163,7 +163,10 @@ export default function GraphCanvasRadial({ nodes, edges, hubNodeIds, onNodeClic
     // Very large graphs (1600 nodes): ~1.8x
     const scaleFactor = 0.4 + Math.sqrt(nodeCount / 100) * 0.5;
     
-    const radius = baseRadius * scaleFactor - 80;
+    // On mobile, use less margin to maximize space
+    const isMobile = window.innerWidth < 768;
+    const margin = isMobile ? 40 : 80;
+    const radius = baseRadius * scaleFactor - margin;
     const cx = width / 2;
     const cy = height / 2;
 
@@ -476,7 +479,9 @@ export default function GraphCanvasRadial({ nodes, edges, hubNodeIds, onNodeClic
     nodeElements.each(function(d: any) {
       const node = select(this);
       const nodeData = d.data;
-      const size = nodeData.depth === 0 ? 10 : nodeData.depth === 1 ? 8 : nodeData.depth === 2 ? 7 : 4;
+      const isMobile = window.innerWidth < 768;
+      const scale = isMobile ? 0.7 : 1;
+      const size = (nodeData.depth === 0 ? 10 : nodeData.depth === 1 ? 8 : nodeData.depth === 2 ? 7 : 4) * scale;
       const color = hubNodeIds.has(nodeData.id)
         ? "hsl(30 90% 55%)"
         : nodeData.depth === 0
@@ -543,7 +548,11 @@ export default function GraphCanvasRadial({ nodes, edges, hubNodeIds, onNodeClic
         if (d.data.depth === 0) return "middle";
         return d.x < Math.PI ? "start" : "end";
       })
-      .attr("font-size", (d: any) => (d.data.depth === 0 ? 13 : 11))
+      .attr("font-size", (d: any) => {
+        const isMobile = window.innerWidth < 768;
+        const textScale = isMobile ? 0.75 : 1;
+        return (d.data.depth === 0 ? 13 : 11) * textScale;
+      })
       .attr("font-weight", (d: any) => {
         if (d.data.depth === 0) return 600;
         if (d.data.depth === 1) return 500;

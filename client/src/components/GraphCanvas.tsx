@@ -297,7 +297,10 @@ export default function GraphCanvas({ nodes, edges, hubNodeIds, onNodeClick }: G
     // Add shapes (circles for normal nodes, diamonds for hub nodes)
     nodeElements.each(function(d) {
       const node = select(this);
-      const size = d.depth === 0 ? 10 : d.depth === 1 ? 8 : d.depth === 2 ? 7 : 4;
+      // Scale down on mobile
+      const isMobile = window.innerWidth < 768;
+      const scale = isMobile ? 0.7 : 1;
+      const size = (d.depth === 0 ? 10 : d.depth === 1 ? 8 : d.depth === 2 ? 7 : 4) * scale;
       const color = d.isHub
         ? "hsl(30 90% 55%)" // Amber for hub nodes
         : d.depth === 0
@@ -344,11 +347,13 @@ export default function GraphCanvas({ nodes, edges, hubNodeIds, onNodeClick }: G
     });
 
     // Add labels
+    const isMobile = window.innerWidth < 768;
+    const textScale = isMobile ? 0.75 : 1;
     nodeElements
       .append("text")
-      .attr("x", (d) => (d.depth === 0 ? 12 : 8))
-      .attr("y", 4)
-      .attr("font-size", (d) => (d.depth === 0 ? 13 : 11))
+      .attr("x", (d) => (d.depth === 0 ? 12 : 8) * textScale)
+      .attr("y", 4 * textScale)
+      .attr("font-size", (d) => ((d.depth === 0 ? 13 : 11) * textScale))
       .attr("font-weight", (d) => {
         // Gradually decrease font weight with depth
         if (d.depth === 0) return 600;

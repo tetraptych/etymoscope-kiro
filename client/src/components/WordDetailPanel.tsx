@@ -27,7 +27,7 @@ export default function WordDetailPanel({
   const hiddenCount = shouldTruncate ? relatedWords.length - 30 : 0;
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-96 bg-background border-l border-border shadow-lg overflow-y-auto">
+    <div className="absolute right-0 top-0 bottom-0 w-96 md:w-96 w-full md:border-l border-t md:border-t-0 border-border bg-background shadow-lg overflow-y-auto md:top-0 top-auto md:bottom-0 bottom-0 md:h-auto h-2/3 rounded-t-2xl md:rounded-none">
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <h2 className="text-2xl font-bold">{word}</h2>

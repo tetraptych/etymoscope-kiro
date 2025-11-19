@@ -108,10 +108,13 @@ export default function HomePage() {
           setSelectedNodeWord(null); // Clear so we don't keep trying
         }
       } else {
-        // Otherwise, auto-select the root node (depth 0)
-        const rootNode = data.nodes.find(n => n.depth === 0);
-        if (rootNode) {
-          setSelectedNode(rootNode);
+        // Otherwise, auto-select the root node (depth 0) - but only on desktop
+        const isMobile = window.innerWidth < 768;
+        if (!isMobile) {
+          const rootNode = data.nodes.find(n => n.depth === 0);
+          if (rootNode) {
+            setSelectedNode(rootNode);
+          }
         }
       }
     }

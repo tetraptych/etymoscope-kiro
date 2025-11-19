@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background with border for visibility in both light and dark modes -->
+  <rect width="100" height="100" fill="#ffffff" rx="20"/>
+  <rect x="4" y="4" width="92" height="92" fill="#1e293b" rx="16"/>
+  
+  <!-- Celtic knot pattern inspired by the original -->
+  <g fill="none" stroke="#fbbf24" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Simplified knot pattern -->
+    <path d="M 30 30 Q 20 50 30 70 Q 50 80 70 70 Q 80 50 70 30 Q 50 20 30 30 Z"/>
+    <path d="M 50 25 L 50 75 M 25 50 L 75 50"/>
+  </g>
+</svg>

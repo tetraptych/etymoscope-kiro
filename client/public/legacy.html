@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Etymoscope</title>
+  <link rel="icon" type="image/x-icon" href="favicon-original.ico"/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <style>
+    /* Original 2020 CSS */
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    
+    html, body {
+      height: 100%;
+    }
+    
+    .new-version-banner {
+      background: #64748b;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    
+    .new-version-banner a {
+      color: white;
+      text-decoration: underline;
+      margin-left: 10px;
+    }
+    
+    .footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+      padding: 10px;
+      background: #f5f5f5;
+      font-size: 12px;
+    }
+    
+    #d3-container {
+      width: 100%;
+      overflow: hidden;
+      margin-top: 30px;
+    }
+    
+    .svg-container {
+      display: block;
+      width: 100%;
+      margin: 0 auto;
+    }
+    
+    .svg-content-responsive {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    
+    .links line {
+      stroke: #999;
+      stroke-opacity: 0.6;
+    }
+    
+    .node circle {
+      stroke: #fff;
+      stroke-width: 1.0px;
+    }
+    
+    .node text {
+      pointer-events: none;
+      font: 10px sans-serif;
+    }
+    
+    canvas {
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <div class="new-version-banner">
+    This is the original Etymoscope (2018-2025).
+    <a href="/" id="new-version-link">See what it looks like now →</a>
+  </div>
+  
+  <header class="navbar navbar-inverse navbar-static-top bs-docs-nav" role="banner">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a href="#" onclick="return false;" class="navbar-brand">Etymoscope</a>
+      </div>
+      <nav class="navbar-collapse bs-navbar-collapse collapse" role="navigation">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="#" onclick="return false;">Home</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  
+  <div class="container">
+    <div class="row text-center">
+      <form class="form-inline">
+        <div class="form-group">
+          <input class="form-control" name="wordInput" id="wordInput" placeholder="Enter a word" value="language">
+        </div>
+        <button class="btn btn-default" type="submit" id="submitButton">Search</button>
+      </form>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div class="row">
+      <div id="d3-container"></div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <a href="https://tetraptych.github.io">© 2018 Brian Lewis. All rights reserved.</a>
+  </div>
+  
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script>
+    // Original 2020 JavaScript - using original S3 data fetching
+    const S3_BUCKET = "https://etymoscope.com/";
+    const defaultWidth = 1000;
+    const color = d3.scaleOrdinal(d3.schemeCategory20);
+    const emptyGraph = JSON.parse('{"nodes": [], "links": []}');
+    
+    // Fetch full graph from S3 (synchronous like original)
+    function requestFullGraphFromS3() {
+      let request = new XMLHttpRequest();
+      let path = S3_BUCKET + "data/etymograph.json";
+      request.open("GET", path, false);
+      request.send();
+      return JSON.parse(request.responseText);
+    }
+    
+    const fullGraph = requestFullGraphFromS3();
+    
+    function selectSatisfactoryDimensions(graph) {
+      var numNodes = graph.nodes.length;
+      var width = defaultWidth;
+      var height = Math.min(Math.round(3 * numNodes + 500), 1600);
+      return [width, height];
+    }
+    
+    function getViewportWidth() {
+      return document.getElementById('d3-container').getBoundingClientRect().width;
+    }
+    
+    function draw(graph, word) {
+      var dimensions = selectSatisfactoryDimensions(graph);
+      var targetWidth = dimensions[0];
+      var targetHeight = dimensions[1];
+      var nodeRadius = 5;
+      var viewportWidth = getViewportWidth();
+      
+      if (viewportWidth < 500) {
+        var trueWidth = 1.4 * viewportWidth;
+        var trueHeight = 2.0 * trueWidth / targetWidth * targetHeight;
+        d3.select("#d3-container").append("div")
+          .classed("svg-container", true)
+          .append("svg")
+          .attr("width", trueWidth)
+          .attr("height", trueHeight);
+      } else {
+        var trueWidth = targetWidth;
+        var trueHeight = targetHeight;
+        d3.select("#d3-container").append("div")
+          .classed("svg-container", true)
+          .append("svg")
+          .attr("preserveAspectRatio", "xMinYMin meet")
+          .attr("viewBox", "0 0 " + targetWidth + " " + targetHeight)
+          .classed("svg-content-responsive", true);
+      }
+      
+      var svg = d3.select("svg");
+      
+      var simulation = d3.forceSimulation(graph.nodes)
+        .force("link", d3.forceLink()
+          .id(function(d) { return d.id; })
+          .links(graph.links)
+          .distance(10)
+          .strength(1.2))
+        .force("charge", d3.forceManyBody()
+          .strength(-800)
+          .distanceMax(350))
+        .force("collide", d3.forceCollide()
+          .strength(1.0)
+          .radius(8))
+        .force("center", d3.forceCenter(trueWidth / 2, trueHeight / 2.5));
+      
+      var link = svg.append("g")
+        .attr("class", "links")
+        .selectAll("line")
+        .data(graph.links)
+        .enter().append("line")
+        .attr("stroke-width", 4);
+      
+      var node = svg.selectAll(".node")
+        .data(graph.nodes)
+        .enter().append("g")
+        .attr("class", "node")
+        .on("dblclick", function(d) {
+          window.open("https://www.etymonline.com/word/" + d.id, '_blank');
+        });
+      
+      node.append("circle")
+        .attr("r", nodeRadius)
+        .attr("fill", function(d) { return color(d.group); });
+      
+      node.append("title")
+        .text(function(d) { return d.id; });
+      
+      var dxText = 12;
+      var dyText = 6;
+      var wordSizeInPixels = 80;
+      
+      node.append("text")
+        .attr("dx", dxText)
+        .attr("dy", dyText)
+        .text(function(d) { return d.id; });
+      
+      d3.selectAll(".node")
+        .filter(function(d) { return d.id === word; })
+        .selectAll("circle")
+        .style("fill", "orange");
+      
+      simulation.nodes(graph.nodes).on("tick", ticked);
+      
+      function ticked() {
+        node.attr("cx", function(d) {
+          return d.x = Math.max(nodeRadius + dxText,
+            Math.min(trueWidth - nodeRadius - dxText - wordSizeInPixels, d.x));
+        }).attr("cy", function(d) {
+          return d.y = Math.max(nodeRadius + dyText,
+            Math.min(trueHeight - nodeRadius - dyText - wordSizeInPixels, d.y));
+        });
+        
+        link.attr("x1", function(d) { return d.source.x; })
+          .attr("y1", function(d) { return d.source.y; })
+          .attr("x2", function(d) { return d.target.x; })
+          .attr("y2", function(d) { return d.target.y; });
+        
+        node.attr("transform", function(d) {
+          return "translate(" + d.x + "," + d.y + ")";
+        });
+      }
+    }
+    
+    function getSubgraph(word, depth) {
+      // Extract subgraph from full graph (original client-side logic)
+      if (!fullGraph.nodes.find(n => n.id === word)) {
+        return emptyGraph;
+      }
+      
+      let subgraphNodes = new Set();
+      let frontier = [word];
+      
+      // BFS to find nodes within depth
+      for (let i = 0; i <= depth; i++) {
+        let nextFrontier = [];
+        for (let node of frontier) {
+          subgraphNodes.add(node);
+          // Find all connected nodes
+          for (let link of fullGraph.links) {
+            if (link.source === node || link.source.id === node) {
+              let target = link.target.id || link.target;
+              if (!subgraphNodes.has(target)) {
+                nextFrontier.push(target);
+              }
+            }
+            if (link.target === node || link.target.id === node) {
+              let source = link.source.id || link.source;
+              if (!subgraphNodes.has(source)) {
+                nextFrontier.push(source);
+              }
+            }
+          }
+        }
+        frontier = nextFrontier;
+      }
+      
+      // Build subgraph
+      let nodes = fullGraph.nodes.filter(n => subgraphNodes.has(n.id));
+      let links = fullGraph.links.filter(l => {
+        let source = l.source.id || l.source;
+        let target = l.target.id || l.target;
+        return subgraphNodes.has(source) && subgraphNodes.has(target);
+      });
+      
+      return { nodes, links };
+    }
+    
+    function getSubgraphAndDrawIt(word, depth) {
+      // Remove existing SVG
+      d3.select("div.svg-container").remove();
+      
+      // Extract and draw subgraph
+      let graph = getSubgraph(word, depth);
+      if (graph.nodes.length === 0) {
+        alert('Word not found: ' + word);
+        return;
+      }
+      draw(graph, word);
+    }
+    
+    // Form submission
+    d3.select("form").on("submit", function() {
+      d3.event.preventDefault();
+      getSubgraphAndDrawIt(this.wordInput.value, 2);
+    });
+    
+    // Set correct link for new version (dev vs production)
+    if (window.location.hostname === 'localhost') {
+      document.getElementById('new-version-link').href = 'http://localhost:5174/';
+    }
+    
+    // Load initial word on page load
+    window.addEventListener('load', function() {
+      getSubgraphAndDrawIt('language', 2);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+{
+  "etymology": {
+    "definition": "The study of the origin of words and the way in which their meanings have changed throughout history",
+    "relatedWords": ["etymon", "etymological", "etymologist", "logos"]
+  },
+  "etymon": {
+    "definition": "The original form of a word from which another word is derived",
+    "relatedWords": ["etymology", "logos", "proto-word"]
+  },
+  "etymological": {
+    "definition": "Relating to the study of the origin and history of words",
+    "relatedWords": ["etymology", "etymologist", "lexicon"]
+  },
+  "etymologist": {
+    "definition": "A person who studies the origins and historical development of words",
+    "relatedWords": ["etymology", "etymological", "linguist"]
+  },
+  "logos": {
+    "definition": "Ancient Greek word meaning 'word', 'reason', or 'plan'",
+    "relatedWords": ["etymology", "etymon", "logic", "lexicon"]
+  },
+  "logic": {
+    "definition": "Reasoning conducted or assessed according to strict principles of validity",
+    "relatedWords": ["logos", "logical"]
+  },
+  "logical": {
+    "definition": "Of or according to the rules of logic or formal argument",
+    "relatedWords": ["logic", "logos"]
+  },
+  "lexicon": {
+    "definition": "The vocabulary of a person, language, or branch of knowledge",
+    "relatedWords": ["etymological", "logos", "dictionary", "vocabulary"]
+  },
+  "dictionary": {
+    "definition": "A book or electronic resource that lists the words of a language and gives their meaning",
+    "relatedWords": ["lexicon", "vocabulary", "word"]
+  },
+  "vocabulary": {
+    "definition": "The body of words used in a particular language",
+    "relatedWords": ["lexicon", "dictionary", "word"]
+  },
+  "word": {
+    "definition": "A single distinct meaningful element of speech or writing",
+    "relatedWords": ["vocabulary", "dictionary", "language"]
+  },
+  "language": {
+    "definition": "The method of human communication, either spoken or written",
+    "relatedWords": ["word", "linguist", "dialect"]
+  },
+  "linguist": {
+    "definition": "A person skilled in foreign languages or who studies linguistics",
+    "relatedWords": ["etymologist", "language", "linguistics"]
+  },
+  "linguistics": {
+    "definition": "The scientific study of language and its structure",
+    "relatedWords": ["linguist", "language"]
+  },
+  "dialect": {
+    "definition": "A particular form of a language which is peculiar to a specific region or social group",
+    "relatedWords": ["language", "vernacular"]
+  },
+  "vernacular": {
+    "definition": "The language or dialect spoken by the ordinary people in a particular country or region",
+    "relatedWords": ["dialect", "language"]
+  },
+  "proto-word": {
+    "definition": "A reconstructed ancestral word from which later words are derived",
+    "relatedWords": ["etymon", "root"]
+  },
+  "root": {
+    "definition": "The basic form of a word which cannot be further analyzed without loss of identity",
+    "relatedWords": ["proto-word", "morpheme", "stem"]
+  },
+  "morpheme": {
+    "definition": "The smallest grammatical unit in a language",
+    "relatedWords": ["root", "stem", "affix"]
+  },
+  "stem": {
+    "definition": "The root or main part of a word to which inflections or formative elements are added",
+    "relatedWords": ["root", "morpheme"]
+  },
+  "affix": {
+    "definition": "An addition to the base form or stem of a word to modify its meaning",
+    "relatedWords": ["morpheme", "prefix", "suffix"]
+  },
+  "prefix": {
+    "definition": "An element placed at the beginning of a word to adjust or qualify its meaning",
+    "relatedWords": ["affix", "suffix"]
+  },
+  "suffix": {
+    "definition": "A morpheme added at the end of a word to form a derivative",
+    "relatedWords": ["affix", "prefix"]
+  }
+}

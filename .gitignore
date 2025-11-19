@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+
+# AWS deployment
+bucket-policy.json
+
+# Legacy project (archived)
+legacy/
+
+# Large data files (available on S3)
+data/full-data.json
+etymoscope-mongodump.json

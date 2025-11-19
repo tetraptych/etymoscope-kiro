@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Etymoscope serverless backend using existing S3 bucket
+
+Parameters:
+  DataBucket:
+    Type: String
+    Default: etymoscope.com
+    Description: Existing S3 bucket containing etymology data
+  DataKey:
+    Type: String
+    Default: data/full-data.json
+    Description: S3 key for etymology data file
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 1024
+    Runtime: nodejs20.x
+    Environment:
+      Variables:
+        DATA_BUCKET: !Ref DataBucket
+        DATA_KEY: !Ref DataKey
+  Api:
+    Cors:
+      AllowMethods: "'GET,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+
+Resources:
+  # Lambda function for getting word etymology
+  GetWordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/getWord/
+      Handler: index.handler
+      Description: Get etymology graph for a specific word
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref DataBucket
+      Events:
+        GetWord:
+          Type: Api
+          Properties:
+            Path: /api/words/{word}
+            Method: get
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints:
+          - index.ts
+
+  # Lambda function for getting random word
+  GetRandomFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/getRandom/
+      Handler: index.handler
+      Description: Get a random word from the etymology database
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref DataBucket
+      Events:
+        GetRandom:
+          Type: Api
+          Properties:
+            Path: /api/random
+            Method: get
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints:
+          - index.ts
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  
+  GetWordFunctionArn:
+    Description: ARN of GetWord Lambda function
+    Value: !GetAtt GetWordFunction.Arn
+  
+  GetRandomFunctionArn:
+    Description: ARN of GetRandom Lambda function
+    Value: !GetAtt GetRandomFunction.Arn
+  
+  DataBucket:
+    Description: S3 bucket containing etymology data
+    Value: !Ref DataBucket
